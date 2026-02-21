@@ -47,4 +47,4 @@ flutter run
 
 ## Nota sobre imágenes
 
-La app usa imágenes con `Image.network()` (URLs públicas). Si necesitas modo **offline**, puedes cambiar a `Image.asset()` y declarar los assets en `pubspec.yaml`.
+La app usa imágenes con `Image.network()` (URLs públicas).
