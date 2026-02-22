@@ -4,6 +4,5 @@
         <item name="android:windowSplashScreenBackground">@android:color/white</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="android:windowSplashScreenAnimationDuration">200</item>
-        <item name="postSplashScreenTheme">@style/NormalTheme</item>
     </style>
 </resources>
