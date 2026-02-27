@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../data/food_model.dart';
+import '../../../../core/database/database_helper.dart';
 import '../widgets/food_card.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   static const List<FoodModel> _foods = [
     FoodModel(
       id: 1,
@@ -53,9 +59,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('FoodiExpress'),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: GridView.builder(
@@ -69,12 +72,17 @@ class HomePage extends StatelessWidget {
           itemBuilder: (context, index) {
             final food = _foods[index];
             return FoodCard(
+              key: ValueKey(food.id),
               food: food,
-              onTap: () => Navigator.pushNamed(
-                context,
-                '/detail',
-                arguments: food,
-              ),
+              onTap: () async {
+                await Navigator.pushNamed(context,
+                  '/detail',
+                  arguments: food);
+                setState(() {});
+              },
+              onFavoriteChanged: () {
+                setState(() {});
+              },
             );
           },
         ),

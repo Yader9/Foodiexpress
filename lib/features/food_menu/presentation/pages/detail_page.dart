@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/food_model.dart';
+import '../../../../core/database/database_helper.dart';
 
 class FoodExtra {
   final String descripcion;
@@ -11,15 +12,40 @@ class FoodExtra {
   });
 }
 
-class DetailPage extends StatelessWidget {
+class DetailPage extends StatefulWidget {
+  //Se convierte en StatefulWidget porque la estrella cambia dinamicamente
   const DetailPage({super.key});
 
-  // Información extendida para cumplir con el detalle:
-  // ingredientes + descripción (sin modificar FoodModel).
+  @override
+  State<DetailPage> createState() => _DetailPageState();
+}
+
+class _DetailPageState extends State<DetailPage> {
+  //Esta variable indica si el plantillo es favorito o no
+  bool isFavorite = false;
+  late FoodModel food;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    food = ModalRoute.of(context)!.settings.arguments as FoodModel;
+    _checkFavorite();
+  }
+
+  Future<void> _checkFavorite() async {
+    final fav = await DatabaseHelper.instance.isFavorite(food.id);
+    setState(() => isFavorite = fav);
+  }
+
   static const Map<int, FoodExtra> _extras = {
     1: FoodExtra(
       descripcion:
-          'Una hamburguesa jugosa con carne 100% res, pan artesanal y vegetales frescos.',
+      'Una hamburguesa jugosa con carne 100% res, pan artesanal y vegetales frescos.',
       ingredientes: [
         'Pan artesanal',
         'Carne de res',
@@ -31,7 +57,7 @@ class DetailPage extends StatelessWidget {
     ),
     2: FoodExtra(
       descripcion:
-          'Pizza al horno con pepperoni, queso mozzarella y salsa de tomate casera.',
+      'Pizza al horno con pepperoni, queso mozzarella y salsa de tomate casera.',
       ingredientes: [
         'Masa artesanal',
         'Salsa de tomate',
@@ -42,7 +68,7 @@ class DetailPage extends StatelessWidget {
     ),
     3: FoodExtra(
       descripcion:
-          'Tacos tradicionales con pastor, piña y cilantro, servidos en tortilla de maíz.',
+      'Tacos tradicionales con pastor, piña y cilantro, servidos en tortilla de maíz.',
       ingredientes: [
         'Tortilla de maíz',
         'Carne al pastor',
@@ -54,7 +80,7 @@ class DetailPage extends StatelessWidget {
     ),
     4: FoodExtra(
       descripcion:
-          'Ensalada clásica con pollo, croutones y aderezo César cremoso.',
+      'Ensalada clásica con pollo, croutones y aderezo César cremoso.',
       ingredientes: [
         'Lechuga romana',
         'Pollo',
@@ -65,7 +91,7 @@ class DetailPage extends StatelessWidget {
     ),
     5: FoodExtra(
       descripcion:
-          'Roll de sushi fresco con arroz sazonado, alga nori y relleno del día.',
+      'Roll de sushi fresco con arroz sazonado, alga nori y relleno del día.',
       ingredientes: [
         'Arroz para sushi',
         'Alga nori',
@@ -77,7 +103,7 @@ class DetailPage extends StatelessWidget {
     ),
     6: FoodExtra(
       descripcion:
-          'Pasta cremosa con salsa Alfredo, queso parmesano y toque de ajo.',
+      'Pasta cremosa con salsa Alfredo, queso parmesano y toque de ajo.',
       ingredientes: [
         'Pasta',
         'Crema',
@@ -91,17 +117,6 @@ class DetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments;
-
-    if (args is! FoodModel) {
-      return const Scaffold(
-        body: Center(
-          child: Text('No se recibió un platillo válido.'),
-        ),
-      );
-    }
-
-    final food = args;
     final extra = _extras[food.id] ??
         const FoodExtra(
           descripcion: 'Sin descripción disponible.',
@@ -111,6 +126,34 @@ class DetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              isFavorite ? Icons.star : Icons.star_border,
+              color: Colors.amber,
+            ),
+            onPressed: () async {
+              if (isFavorite) {
+                await DatabaseHelper.instance.deleteFood(food.id);
+              } else {
+                await DatabaseHelper.instance.insertFood(food);
+              }
+
+              setState(() => isFavorite = !isFavorite);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isFavorite
+                        ? 'Añadido a favoritos'
+                        : 'Eliminado de favoritos',
+                  ),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -140,8 +183,8 @@ class DetailPage extends StatelessWidget {
               child: Text(
                 food.nombre,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
             Padding(
@@ -149,8 +192,8 @@ class DetailPage extends StatelessWidget {
               child: Text(
                 '\$${food.precio.toStringAsFixed(2)}',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -167,8 +210,8 @@ class DetailPage extends StatelessWidget {
               child: Text(
                 'Ingredientes',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -180,12 +223,12 @@ class DetailPage extends StatelessWidget {
                 children: extra.ingredientes
                     .map(
                       (i) => Chip(
-                        label: Text(i),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    )
+                    label: Text(i),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                )
                     .toList(),
               ),
             ),
