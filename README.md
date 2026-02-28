@@ -55,6 +55,7 @@ lib/
 1) Instala dependencias:
 ```bash
 flutter pub get
+```
 
 2) Ejecuta en un dispositivo/emulador:
 ```bash
