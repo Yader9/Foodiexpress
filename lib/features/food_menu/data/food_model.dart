@@ -13,19 +13,19 @@ class FoodModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'id' : id,
-      'name' : nombre,
-      'price' : precio,
-      'image' : imagen,
+      'id': id,
+      'name': nombre,
+      'price': precio,
+      'image': imagen,
     };
   }
 
   factory FoodModel.fromMap(Map<String, dynamic> map) {
     return FoodModel(
-      id: map['id'],
-      nombre: map['name'],
-      precio: map['price'],
-      imagen: map['image'],
+      id: (map['id'] as num).toInt(),
+      nombre: (map['name'] ?? '') as String,
+      precio: (map['price'] as num).toDouble(),
+      imagen: (map['image'] ?? '') as String,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:foodiexpress/core/database/database_helper.dart';
+
+import '../../data/datasources/favorites_local_datasource.dart';
 import '../../data/food_model.dart';
 
 class FoodCard extends StatefulWidget {
@@ -19,17 +20,10 @@ class FoodCard extends StatefulWidget {
 }
 
 class _FoodCardState extends State<FoodCard> {
-  bool isFavorite = false;
+  final FavoritesLocalDatasource _favoritesDatasource = FavoritesLocalDatasource();
 
-  @override
-  void didUpdateWidget(covariant FoodCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.food.id != widget.food.id) {
-      _loadFavorite();
-    } else {
-      _loadFavorite(); //fuerza recarga aunque sea el mismo food
-    }
-  }
+  bool _isFavorite = false;
+  bool _processing = false;
 
   @override
   void initState() {
@@ -37,9 +31,60 @@ class _FoodCardState extends State<FoodCard> {
     _loadFavorite();
   }
 
+  @override
+  void didUpdateWidget(covariant FoodCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.food.id != widget.food.id) {
+      _loadFavorite();
+    }
+  }
+
   Future<void> _loadFavorite() async {
-    final fav = await DatabaseHelper.instance.isFavorite(widget.food.id);
-    setState(() => isFavorite = fav);
+    try {
+      final fav = await _favoritesDatasource.isFavorite(widget.food.id);
+      if (!mounted) return;
+      setState(() => _isFavorite = fav);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isFavorite = false);
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_processing) return;
+
+    setState(() => _processing = true);
+
+    try {
+      if (_isFavorite) {
+        await _favoritesDatasource.removeFavorite(widget.food.id);
+      } else {
+        await _favoritesDatasource.addFavorite(widget.food);
+      }
+
+      if (!mounted) return;
+      setState(() => _isFavorite = !_isFavorite);
+
+      widget.onFavoriteChanged?.call();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isFavorite ? 'Añadido a favoritos' : 'Eliminado de favoritos'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo actualizar favorito. Error: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() => _processing = false);
+    }
   }
 
   @override
@@ -78,11 +123,7 @@ class _FoodCardState extends State<FoodCard> {
                     widget.food.nombre,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -92,46 +133,21 @@ class _FoodCardState extends State<FoodCard> {
                     children: [
                       Text(
                         '\$${widget.food.precio.toStringAsFixed(2)}',
-                        style: Theme
-                            .of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       GestureDetector(
-                        onTap: () async {
-                          if (isFavorite) {
-                            await DatabaseHelper.instance.deleteFood(
-                                widget.food.id);
-                          }
-                          else {
-                            await DatabaseHelper.instance.insertFood(
-                                widget.food);
-                          }
-
-                          setState(() => isFavorite = !isFavorite);
-
-                          //Notificar al padre
-                          if (widget.onFavoriteChanged != null) {
-                            widget.onFavoriteChanged!();
-                          }
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                isFavorite
-                                    ? 'Añadido a favoritos'
-                                    : 'Eliminado de favoritos',
-                              ),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-
-                        },
-                        child: Icon(
-                          isFavorite ? Icons.star : Icons.star_border,
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _toggleFavorite,
+                        child: _processing
+                            ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                            : Icon(
+                          _isFavorite ? Icons.star : Icons.star_border,
                           color: Colors.amber,
                         ),
                       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
+
 import 'favorites_page.dart';
+import 'home_page.dart';
 
 class MaintabPage extends StatelessWidget {
   const MaintabPage({super.key});
@@ -8,25 +9,26 @@ class MaintabPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('FoodiExpress'),
-            bottom: const TabBar(
-              labelColor: Colors.amber,
-              unselectedLabelColor: Colors.white,
-              tabs: [
-              Tab(icon: Icon(Icons.restaurant_menu), text: 'Menu'),
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('FoodiExpress'),
+          bottom: const TabBar(
+            labelColor: Colors.amber,
+            unselectedLabelColor: Colors.white,
+            tabs: [
+              Tab(icon: Icon(Icons.restaurant_menu), text: 'Menú'),
               Tab(icon: Icon(Icons.star), text: 'Favoritos'),
             ],
-            ),
           ),
-        body: const TabBarView(children: [
-          HomePage(),
-          FavoritesPage(),
-        ],
         ),
+        body: const TabBarView(
+          children: [
+            HomePage(),
+            FavoritesPage(),
+          ],
         ),
+      ),
     );
   }
 }

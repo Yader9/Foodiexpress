@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Tema global de la app: Naranja + Blanco, con una fuente definida.
-/// Basado en la guía del laboratorio (Grupo A: Foodie/FoodiExpress).
 class AppTheme {
   static ThemeData get lightTheme {
     const Color primaryOrange = Colors.deepOrange;
@@ -20,15 +18,13 @@ class AppTheme {
         centerTitle: true,
         elevation: 0,
       ),
-
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryOrange,

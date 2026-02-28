@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../data/datasources/favorites_local_datasource.dart';
 import '../../data/food_model.dart';
-import '../../../../core/database/database_helper.dart';
 
 class FoodExtra {
   final String descripcion;
@@ -13,7 +14,7 @@ class FoodExtra {
 }
 
 class DetailPage extends StatefulWidget {
-  //Se convierte en StatefulWidget porque la estrella cambia dinamicamente
+  // Se convierte en StatefulWidget porque la estrella cambia dinámicamente.
   const DetailPage({super.key});
 
   @override
@@ -21,14 +22,12 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
-  //Esta variable indica si el plantillo es favorito o no
-  bool isFavorite = false;
-  late FoodModel food;
+  final FavoritesLocalDatasource _favoritesDatasource = FavoritesLocalDatasource();
 
-  @override
-  void initState() {
-    super.initState();
-  }
+  bool _isFavorite = false;
+  bool _processingFavorite = false;
+
+  late FoodModel food;
 
   @override
   void didChangeDependencies() {
@@ -38,8 +37,15 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   Future<void> _checkFavorite() async {
-    final fav = await DatabaseHelper.instance.isFavorite(food.id);
-    setState(() => isFavorite = fav);
+    try {
+      final fav = await _favoritesDatasource.isFavorite(food.id);
+      if (!mounted) return;
+      setState(() => _isFavorite = fav);
+    } catch (e) {
+      // Si falla, no rompemos la pantalla.
+      if (!mounted) return;
+      setState(() => _isFavorite = false);
+    }
   }
 
   static const Map<int, FoodExtra> _extras = {
@@ -113,6 +119,50 @@ class _DetailPageState extends State<DetailPage> {
         'Perejil',
       ],
     ),
+    7: FoodExtra(
+      descripcion:
+      'Burrito grande con pollo sazonado, arroz, frijoles y vegetales frescos.',
+      ingredientes: [
+        'Tortilla de harina',
+        'Pollo',
+        'Arroz',
+        'Frijoles',
+        'Queso',
+        'Pico de gallo',
+      ],
+    ),
+    8: FoodExtra(
+      descripcion:
+      'Ramen estilo Tonkotsu con caldo cremoso, fideos y toppings tradicionales.',
+      ingredientes: [
+        'Fideos ramen',
+        'Caldo tonkotsu',
+        'Chashu',
+        'Huevo',
+        'Cebollín',
+        'Alga nori',
+      ],
+    ),
+    9: FoodExtra(
+      descripcion:
+      'Pollo frito crujiente con especias, ideal para compartir.',
+      ingredientes: [
+        'Pollo',
+        'Harina sazonada',
+        'Especias',
+        'Aceite',
+        'Salsa a elección',
+      ],
+    ),
+    10: FoodExtra(
+      descripcion:
+      'Postre caliente de brownie con helado de vainilla y salsa de chocolate.',
+      ingredientes: [
+        'Brownie',
+        'Helado de vainilla',
+        'Salsa de chocolate',
+      ],
+    ),
   };
 
   @override
@@ -128,30 +178,55 @@ class _DetailPageState extends State<DetailPage> {
         title: const Text('Detalle'),
         actions: [
           IconButton(
-            icon: Icon(
-              isFavorite ? Icons.star : Icons.star_border,
+            onPressed: _processingFavorite
+                ? null
+                : () async {
+              setState(() => _processingFavorite = true);
+
+              try {
+                if (_isFavorite) {
+                  await _favoritesDatasource.removeFavorite(food.id);
+                } else {
+                  await _favoritesDatasource.addFavorite(food);
+                }
+
+                if (!mounted) return;
+                setState(() => _isFavorite = !_isFavorite);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      _isFavorite
+                          ? 'Añadido a favoritos'
+                          : 'Eliminado de favoritos',
+                    ),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content:
+                    Text('No se pudo actualizar favorito. Error: $e'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              } finally {
+                if (!mounted) return;
+                setState(() => _processingFavorite = false);
+              }
+            },
+            icon: _processingFavorite
+                ? const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+                : Icon(
+              _isFavorite ? Icons.star : Icons.star_border,
               color: Colors.amber,
             ),
-            onPressed: () async {
-              if (isFavorite) {
-                await DatabaseHelper.instance.deleteFood(food.id);
-              } else {
-                await DatabaseHelper.instance.insertFood(food);
-              }
-
-              setState(() => isFavorite = !isFavorite);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isFavorite
-                        ? 'Añadido a favoritos'
-                        : 'Eliminado de favoritos',
-                  ),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
           ),
         ],
       ),
