@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'favorites_page.dart';
 import 'home_page.dart';
 
@@ -13,6 +13,14 @@ class MaintabPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('FoodiExpress'),
+          actions: [
+            IconButton(
+                onPressed: (){
+                  FirebaseAuth.instance.signOut();
+                },
+                icon: const Icon(Icons.logout),
+            ),
+          ],
           bottom: const TabBar(
             labelColor: Colors.amber,
             unselectedLabelColor: Colors.white,
